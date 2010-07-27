@@ -28,7 +28,7 @@ import org.jboss.shrinkwrap.api.Assignable;
  * @author <a href="mailto:aslak@conduct.no">Aslak Knutsen</a>
  * @version $Revision: $
  */
-public interface ZipImporter extends Assignable
+public interface ZipImporter extends StreamImporter<ZipInputStream, ZipImporter>
 {
    //-------------------------------------------------------------------------------------||
    // Contracts --------------------------------------------------------------------------||
@@ -41,7 +41,9 @@ public interface ZipImporter extends Assignable
    * @return Archive of the imported Zip
    * @throws ArchiveImportException If an error occurred during the import process
    * @throws IllegalArgumentException If no stream is specified
+   * @deprecated Use {@link ZipImporter#importFrom(ZipInputStream)}
    */
+   @Deprecated
    ZipImporter importZip(ZipInputStream stream) throws ArchiveImportException;
 
    /**
@@ -51,6 +53,18 @@ public interface ZipImporter extends Assignable
     * @return Archive of the imported Zip
     * @throws ArchiveImportException If an error occurred during the import process
     * @throws IllegalArgumentException If no file is specified
+    * @deprecated Use {@link ZipImporter#importFrom(ZipFile)}
     */
+   @Deprecated
    ZipImporter importZip(ZipFile file) throws ArchiveImportException;
+   
+   /**
+    * Imports provided {@link ZipFile} as a {@link Archive}.
+    * 
+    * @param file the file to import
+    * @return Archive of the imported Zip
+    * @throws ArchiveImportException If an error occurred during the import process
+    * @throws IllegalArgumentException If no file is specified
+    */
+   ZipImporter importFrom(ZipFile file) throws ArchiveImportException;
 }

@@ -17,7 +17,6 @@
 package org.jboss.shrinkwrap.impl.base.importer;
 
 import java.io.File;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -27,6 +26,7 @@ import java.util.zip.ZipFile;
 import junit.framework.Assert;
 
 import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.Node;
 import org.jboss.shrinkwrap.impl.base.io.IOUtil;
 import org.jboss.shrinkwrap.impl.base.path.BasicPath;
 
@@ -38,7 +38,7 @@ import org.jboss.shrinkwrap.impl.base.path.BasicPath;
  * @author <a href="mailto:aslak@conduct.no">Aslak Knutsen</a>
  * @version $Revision: $
  */
-public class ZipContentAssertionDelegate
+public class ZipContentAssertionDelegate extends ContentAssertionDelegateBase
 {
 
    //-------------------------------------------------------------------------------------||
@@ -50,27 +50,9 @@ public class ZipContentAssertionDelegate
     */
    private static final String EXISTING_ZIP_RESOURCE = "org/jboss/shrinkwrap/impl/base/importer/test.zip";
 
-   /**
-    * Name of the expected empty directory
-    */
-   private static final String EXPECTED_EMPTY_DIR = "empty_dir/";
-
-   /**
-    * Name of the expected nested directory
-    */
-   private static final String EXPECTED_NESTED_EMPTY_DIR = "parent/empty_dir/";
-
    //-------------------------------------------------------------------------------------||
    // Functional Methods -----------------------------------------------------------------||
    //-------------------------------------------------------------------------------------||
-
-   /**
-    * Obtains the test ZIP file
-    */
-   public File getExistingZipResource() throws URISyntaxException
-   {
-      return new File(SecurityActions.getThreadContextClassLoader().getResource(EXISTING_ZIP_RESOURCE).toURI());
-   }
 
    /**
     * Compare the content of the original file and what was imported.
@@ -95,7 +77,6 @@ public class ZipContentAssertionDelegate
 
       for (ZipEntry originalEntry : entries)
       {
-
          if (originalEntry.isDirectory())
          {
             // Check for expected empty dirs
@@ -112,10 +93,10 @@ public class ZipContentAssertionDelegate
 
          Assert.assertTrue("Importer should have imported " + originalEntry.getName() + " from " + originalSource,
                importedArchive.contains(new BasicPath(originalEntry.getName())));
-
+         
          byte[] originalContent = IOUtil.asByteArray(testZip.getInputStream(originalEntry));
-         byte[] importedContent = IOUtil.asByteArray(importedArchive.get(new BasicPath(originalEntry.getName()))
-               .getAsset().openStream());
+         final Node node = importedArchive.get(new BasicPath(originalEntry.getName()));
+         byte[] importedContent = IOUtil.asByteArray(node.getAsset().openStream());
 
          Assert.assertTrue("The content of " + originalEntry.getName() + " should be equal to the imported content",
                Arrays.equals(importedContent, originalContent));
@@ -124,5 +105,19 @@ public class ZipContentAssertionDelegate
       // Ensure empty directories have come in cleanly
       Assert.assertTrue("Empty directory not imported", containsEmptyDir);
       Assert.assertTrue("Empty nested directory not imported", containsEmptyNestedDir);
+   }
+
+   //-------------------------------------------------------------------------------------||
+   // Required Implementations -----------------------------------------------------------||
+   //-------------------------------------------------------------------------------------||
+   
+   /**
+    * {@inheritDoc}
+    * @see org.jboss.shrinkwrap.impl.base.importer.ContentAssertionDelegateBase#getExistingResourceName()
+    */
+   @Override
+   protected String getExistingResourceName()
+   {
+      return EXISTING_ZIP_RESOURCE;
    }
 }

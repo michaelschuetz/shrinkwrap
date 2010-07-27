@@ -17,6 +17,7 @@
 package org.jboss.shrinkwrap.impl.base.importer;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.logging.Logger;
@@ -39,12 +40,12 @@ import org.jboss.shrinkwrap.impl.base.path.BasicPath;
  * @author <a href="mailto:aslak@conduct.no">Aslak Knutsen</a>
  * @version $Revision: $
  */
-public class ZipImporterImpl extends AssignableBase implements ZipImporter  
+public class ZipImporterImpl extends AssignableBase implements ZipImporter
 {
    //-------------------------------------------------------------------------------------||
    // Class Members ----------------------------------------------------------------------||
    //-------------------------------------------------------------------------------------||
-   
+
    /**
     * Logger
     */
@@ -54,17 +55,17 @@ public class ZipImporterImpl extends AssignableBase implements ZipImporter
    //-------------------------------------------------------------------------------------||
    // Instance Members -------------------------------------------------------------------||
    //-------------------------------------------------------------------------------------||
-   
+
    /**
     * Archive to import into. 
     */
-   private Archive<?> archive; 
-   
+   private Archive<?> archive;
+
    //-------------------------------------------------------------------------------------||
    // Constructor ------------------------------------------------------------------------||
    //-------------------------------------------------------------------------------------||
 
-   public ZipImporterImpl(Archive<?> archive) 
+   public ZipImporterImpl(Archive<?> archive)
    {
       Validate.notNull(archive, "Archive must be specified");
       this.archive = archive;
@@ -73,7 +74,7 @@ public class ZipImporterImpl extends AssignableBase implements ZipImporter
    //-------------------------------------------------------------------------------------||
    // Required Implementations -----------------------------------------------------------||
    //-------------------------------------------------------------------------------------||
-   
+
    /**
     * {@inheritDoc}
     * @see org.jboss.shrinkwrap.impl.base.AssignableBase#getArchive()
@@ -88,30 +89,52 @@ public class ZipImporterImpl extends AssignableBase implements ZipImporter
     * {@inheritDoc}
     * @see org.jboss.shrinkwrap.api.importer.ZipImporter#importZip(java.util.zip.ZipInputStream)
     */
-   // TODO: create a ZipEntryAsset that can stream directly from the stream somehow?
    @Override
-   public ZipImporter importZip(ZipInputStream stream)
+   @Deprecated
+   public ZipImporter importZip(final ZipInputStream stream)
+   {
+      // Delegate
+      return this.importFrom(stream);
+   }
+
+   /* (non-Javadoc)
+    * @see org.jboss.shrinkwrap.api.importer.ZipImporter#importZip(java.util.zip.ZipFile)
+    */
+   @Deprecated
+   @Override
+   public ZipImporter importZip(ZipFile file)
+   {
+      // Delegate
+      return this.importFrom(file);
+   }
+
+   /**
+    * {@inheritDoc}
+    * @see org.jboss.shrinkwrap.api.importer.StreamImporter#importFrom(java.io.InputStream)
+    */
+   @Override
+   public ZipImporter importFrom(final ZipInputStream stream) throws ArchiveImportException
    {
       Validate.notNull(stream, "Stream must be specified");
-      try 
+      try
       {
          ZipEntry entry;
-         while( (entry = stream.getNextEntry()) != null) 
+         while ((entry = stream.getNextEntry()) != null)
          {
             // Get the name
             final String entryName = entry.getName();
-            
+
             // Handle directories separately
-            if(entry.isDirectory()) 
+            if (entry.isDirectory())
             {
                archive.addDirectory(entryName);
-               continue; 
+               continue;
             }
 
             ByteArrayOutputStream output = new ByteArrayOutputStream(8192);
             byte[] content = new byte[4096];
             int readBytes;
-            while( (readBytes = stream.read(content, 0, content.length)) != -1)
+            while ((readBytes = stream.read(content, 0, content.length)) != -1)
             {
                output.write(content, 0, readBytes);
             }
@@ -119,42 +142,68 @@ public class ZipImporterImpl extends AssignableBase implements ZipImporter
             stream.closeEntry();
          }
       }
-      catch (IOException e) 
+      catch (IOException e)
       {
          throw new ArchiveImportException("Could not import stream", e);
       }
       return this;
    }
    
-   /* (non-Javadoc)
-    * @see org.jboss.shrinkwrap.api.importer.ZipImporter#importZip(java.util.zip.ZipFile)
+   /**
+    * {@inheritDoc}
+    * @see org.jboss.shrinkwrap.api.importer.StreamImporter#importFrom(java.io.File)
     */
-   @Override
-   public ZipImporter importZip(ZipFile file)
+   public ZipImporter importFrom(final File file) throws ArchiveImportException
    {
       Validate.notNull(file, "File must be specified");
 
-       try {
-           Enumeration<? extends ZipEntry> entries = file.entries();
-           while(entries.hasMoreElements())
-           {
-              ZipEntry entry = entries.nextElement();
+      final ZipFile zipFile;
+      try
+      {
+         zipFile = new ZipFile(file);
+      }
+      catch (final IOException ioe)
+      {
+         throw new ArchiveImportException("Could not obtain ZIP File from File", ioe);
+      }
 
-              // Get the entry (path) name
-              final String entryName = entry.getName();
+      // Delegate
+      return this.importFrom(zipFile);
+   }
 
-              // Handle directories separately
-              if(entry.isDirectory())
-              {
-                 archive.addDirectory(entryName);
-                 continue;
-              }
+   /**
+    * {@inheritDoc}
+    * @see org.jboss.shrinkwrap.api.importer.StreamImporter#importFrom(java.io.File)
+    */
+   @Override
+   public ZipImporter importFrom(final ZipFile file) throws ArchiveImportException
+   {
+      Validate.notNull(file, "File must be specified");
 
-              archive.add(new ZipFileEntryAsset(file, entry), new BasicPath(entryName));
-           }
-       } catch (Exception e) {
-           throw new ArchiveImportException("Could not import file", e);
-       }
-       return this;
+      try
+      {
+         Enumeration<? extends ZipEntry> entries = file.entries();
+         while (entries.hasMoreElements())
+         {
+            ZipEntry entry = entries.nextElement();
+
+            // Get the entry (path) name
+            final String entryName = entry.getName();
+
+            // Handle directories separately
+            if (entry.isDirectory())
+            {
+               archive.addDirectory(entryName);
+               continue;
+            }
+
+            archive.add(new ZipFileEntryAsset(file, entry), new BasicPath(entryName));
+         }
+      }
+      catch (Exception e)
+      {
+         throw new ArchiveImportException("Could not import file", e);
+      }
+      return this;
    }
 }

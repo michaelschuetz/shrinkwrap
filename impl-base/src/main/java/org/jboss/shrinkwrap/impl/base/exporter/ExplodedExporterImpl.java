@@ -78,11 +78,12 @@ public class ExplodedExporterImpl extends AssignableBase implements ExplodedExpo
    // Required Implementations - ExplodedExporter ----------------------------------------||
    //-------------------------------------------------------------------------------------||
 
-   /* (non-Javadoc)
+   /**
+    * {@inheritDoc}
     * @see org.jboss.shrinkwrap.api.exporter.ExplodedExporter#exportExploded(java.io.File)
     */
    @Override
-   public File exportExploded(File baseDirectory)
+   public File exportExploded(final File baseDirectory)
    {
       Validate.notNull(archive, "No archive provided");
       Validate.notNull(baseDirectory, "No baseDirectory provided");
@@ -99,13 +100,10 @@ public class ExplodedExporterImpl extends AssignableBase implements ExplodedExpo
       }
 
       // Get the export delegate
-      ExplodedExporterDelegate exporterDelegate = new ExplodedExporterDelegate(archive, baseDirectory);
-
-      // Run the export
-      exporterDelegate.export();
+      final ExplodedExporterDelegate exporterDelegate = new ExplodedExporterDelegate(archive, baseDirectory);
       
-      // Get Result
-      File explodedDirectory = exporterDelegate.getResult();
+      // Run the export and get the result
+      final File explodedDirectory = exporterDelegate.export();
 
       if (log.isLoggable(Level.FINE))
       {
