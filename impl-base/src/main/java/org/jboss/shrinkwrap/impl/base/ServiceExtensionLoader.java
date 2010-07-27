@@ -263,21 +263,30 @@ public class ServiceExtensionLoader implements ExtensionLoader
 
       @SuppressWarnings("unchecked")
       Class<T> constructorArg = (Class<T>) extensionImplConstructor.getParameterTypes()[0];
-      try {
+      try
+      {
 
-         if (constructorArg.isInstance(archive)) {
+         if (constructorArg.isInstance(archive))
+         {
             extension = extensionImplConstructor.newInstance(archive);
-         } else {
+         } else
+         {
             extension = extensionImplConstructor.newInstance(
                load(constructorArg, archive));
          }
-      } catch (InstantiationException e) {
+      }
+      catch (InstantiationException e)
+      {
          throw new ExtensionLoadingException("Failed to instantiate class of type " + archive.getClass() +
             ". The underlying class can not be abstract.", e);
-      } catch (IllegalAccessException e) {
-         throw new ExtensionLoadingException("Failed to instantiate class of type " + archive.getClass() + 
+      }
+      catch (IllegalAccessException e)
+      {
+         throw new ExtensionLoadingException("Failed to instantiate class of type " + archive.getClass() +
             ". The underlying constructor is inaccessible.", e);
-      } catch (InvocationTargetException e) {
+      }
+      catch (InvocationTargetException e)
+      {
          throw new ExtensionLoadingException("Failed to instantiate class of type " + archive.getClass() +
             ". The underlying constructor threw an exception.", e);
       }
